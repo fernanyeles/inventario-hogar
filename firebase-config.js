@@ -1,14 +1,10 @@
-// Pega aquí la configuración de tu proyecto de Firebase (ver LEEME.md, paso 2).
-// Mientras esté vacío, la app funciona en MODO PRUEBA: guarda los datos solo en este dispositivo.
-// Estos valores no son secretos: la seguridad la dan las reglas de Firestore (firestore.rules).
-export const firebaseConfig = null;
-/* Ejemplo de cómo debe quedar:
+// Configuración del proyecto de Firebase. Estos valores no son secretos:
+// la seguridad la dan las reglas de Firestore (ver LEEME.md).
 export const firebaseConfig = {
-  apiKey: "...",
-  authDomain: "tu-proyecto.firebaseapp.com",
-  projectId: "tu-proyecto",
-  storageBucket: "tu-proyecto.appspot.com",
-  messagingSenderId: "...",
-  appId: "..."
+  apiKey: "AIzaSyCz8H-sJDYjstCCFq9PXA5BCzGYAX1D3sQ",
+  authDomain: "inventario-hogar-6650b.firebaseapp.com",
+  projectId: "inventario-hogar-6650b",
+  storageBucket: "inventario-hogar-6650b.firebasestorage.app",
+  messagingSenderId: "143503650019",
+  appId: "1:143503650019:web:3a202d0538516d41d169d6"
 };
-*/
