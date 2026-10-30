@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Solo las dos personas con estos correos pueden leer y escribir.
+    // Sustituye los correos por los vuestros antes de publicar las reglas.
+    function permitido() {
+      return request.auth != null
+        && request.auth.token.email in ['CORREO_1@ejemplo.com', 'CORREO_2@ejemplo.com'];
+    }
+    match /{document=**} {
+      allow read, write: if permitido();
+    }
+  }
+}

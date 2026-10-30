@@ -1,0 +1,29 @@
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#6b6a64;--ac:#2f6f5e;--bd:#e3e1d9;--wa:#c2410c;--rd:#b91c1c;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#161714;--card:#21221f;--tx:#eceae3;--mu:#9a9990;--ac:#5fb59f;--bd:#33342f;--wa:#fb923c;--rd:#f87171}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 0 calc(84px + env(safe-area-inset-bottom))}
+h1{font-size:20px;margin:14px 16px 4px}
+.sub{margin:0 16px 8px;color:var(--mu);font-size:13px}
+main,#login{padding:0 12px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin:8px 0}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.nm{font-weight:600;overflow-wrap:anywhere}
+.mu{color:var(--mu);font-size:13px}
+.q{font-size:20px;font-weight:700;min-width:36px;text-align:center}
+button{font:inherit;border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:10px;min-width:44px;height:44px;padding:0 10px;cursor:pointer}
+button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.x{min-width:32px;height:32px;color:var(--mu);border:0;background:none}
+input,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;height:44px;padding:0 10px;max-width:100%}
+#loginForm input,#loginForm button{width:100%;margin-top:8px}
+input[type=date]{height:34px;font-size:13px}
+.w{color:var(--wa)}.r{color:var(--rd)}.off{opacity:.5}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;border-radius:0;height:58px;background:none;font-size:10px;min-width:0;padding:0}
+nav button.on{color:var(--ac);font-weight:700}
+nav span{display:block;font-size:20px}
+.b{background:var(--wa);color:#fff;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:14px}
+[hidden]{display:none!important}
+
+#nn{flex:1 1 100%}
