@@ -18,6 +18,16 @@ async function firebaseStore(cfg) {
     mode: "firebase",
     onAuth: (cb) => auth.onAuthStateChanged(a, cb),
     signIn: (e, p) => auth.signInWithEmailAndPassword(a, e, p),
+    signInGoogle: async () => {
+      const prov = new auth.GoogleAuthProvider();
+      prov.setCustomParameters({ prompt: "select_account" });
+      try { await auth.signInWithPopup(a, prov); }
+      catch (e) {
+        if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(e.code)) return auth.signInWithRedirect(a, prov);
+        throw e;
+      }
+    },
+    redirectResult: () => auth.getRedirectResult(a).catch((e) => { throw e; }),
     onItems: (cb, err) =>
       fs.onSnapshot(fs.collection(db, "items"), (s) => cb(s.docs.map((d) => ({ id: d.id, ...d.data() }))), err),
     onDays: (cb, err) => fs.onSnapshot(fs.doc(db, "settings", "days"), (s) => cb((s.exists() && s.data().d) || {}), err),
@@ -39,6 +49,8 @@ function localStore() {
     mode: "local",
     onAuth: (cb) => setTimeout(() => cb({ email: "prueba" }), 0),
     signIn: async () => {},
+    signInGoogle: async () => {},
+    redirectResult: async () => {},
     onItems: (cb) => { itemsCbs.add(cb); cb(load().items); return () => itemsCbs.delete(cb); },
     onDays: (cb) => { daysCbs.add(cb); cb(load().days); return () => daysCbs.delete(cb); },
     add: async (it) => { const s = load(); s.items.push({ id: "l" + Date.now() + Math.random().toString(36).slice(2, 6), ...it }); save(s); fire(); },

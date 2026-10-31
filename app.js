@@ -124,10 +124,17 @@ $("#loginForm").addEventListener("submit", async (e) => {
   catch (x) { $("#loginErr").textContent = "No se pudo entrar: revisa el correo y la contraseña."; }
 });
 
+$("#gBtn").addEventListener("click", async () => {
+  $("#loginErr").textContent = "";
+  try { await store.signInGoogle(); }
+  catch (x) { $("#loginErr").textContent = x.code === "auth/unauthorized-domain" ? "Falta autorizar el dominio en Firebase." : x.code === "auth/popup-closed-by-user" ? "" : "No se pudo entrar con Google."; }
+});
+
 let unsub = [];
 (async () => {
   store = await createStore();
   window.__store = store;
+  store.redirectResult().catch(() => {});
   store.onAuth((u) => {
     user = u;
     unsub.forEach((f) => f && f()); unsub = [];
