@@ -17,7 +17,30 @@ const DEF = {
 const NOEXP = (s) => s === "hogar" || s === "ropa";
 const SOON = 3; // días para considerar "caduca pronto"
 
-let store, items = [], days = {}, tab = "avisos", user = null;
+const SHOPCATS = ["Pasta y arroz", "Verduras y hortalizas", "Frutas", "Pescado", "Carne", "Lácteos y huevos", "Pan y desayuno", "Congelados", "Bebidas", "Limpieza e higiene", "Otros"];
+const GUESS = {
+  "Pasta y arroz": "pasta arroz macarron espagueti fideo tallarin lenteja garbanzo alubia legumbre harina cuscus",
+  "Verduras y hortalizas": "tomate lechuga cebolla ajo patata zanahoria pimiento calabacin pepino espinaca brocoli coliflor champi seta berenjena judia puerro apio col verdura ensalada",
+  "Frutas": "manzana platano naranja mandarina limon pera uva fresa melon sandia kiwi piña melocoton cereza aguacate fruta",
+  "Pescado": "pescado salmon merluza atun bacalao gamba langostino calamar sardina pulpo mejillon lubina dorada",
+  "Carne": "carne pollo ternera cerdo cordero pavo jamon chorizo salchicha bacon lomo hamburguesa filete beicon",
+  "Lácteos y huevos": "leche yogur queso mantequilla nata huevo kefir requeson",
+  "Pan y desayuno": "pan cereal galleta tostada bolleria croissant mermelada cafe cacao azucar",
+  "Congelados": "congelado helado pizza",
+  "Bebidas": "agua zumo cerveza vino refresco cola te infusion",
+  "Limpieza e higiene": "lejia detergente suavizante fregasuelos lavavajillas papel higienico jabon champu gel pasta dental dentifrico servilleta bolsa basura fregona",
+};
+const norm = (s) => String(s || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const guessCat = (name) => {
+  const n = norm(name);
+  if (!n) return "Otros";
+  for (const [c, ws] of Object.entries(GUESS)) if (ws.split(" ").some((w) => w && n.includes(w))) return c;
+  return "Otros";
+};
+const cap = (s) => s.trim().charAt(0).toUpperCase() + s.trim().slice(1);
+
+let store, items = [], shop = [], days = {}, tab = "avisos", user = null;
+let draft = { name: "", cat: "Otros", touched: false }, editQuick = false;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -40,6 +63,32 @@ function itemHtml(i, showSec) {
   ${!NOEXP(i.sec) ? `<input type="date" data-a="exp" value="${esc(i.exp || "")}" aria-label="Fecha de caducidad" style="margin-left:auto">` : ""}</div></div>`;
 }
 
+function shopHtml() {
+  const inList = shop.filter((x) => x.inList), known = shop.filter((x) => !x.inList);
+  const byCat = (arr) => SHOPCATS.map((c) => [c, arr.filter((x) => (SHOPCATS.includes(x.cat) ? x.cat : "Otros") === c)]).filter(([, a]) => a.length);
+  const doneN = inList.filter((x) => x.done).length;
+  let h = `<div class="card"><div class="row"><input id="sn" class="grow" list="shopnames" placeholder="Añadir a la compra…" autocomplete="off" value="${esc(draft.name)}">
+    <datalist id="shopnames">${shop.map((x) => `<option value="${esc(x.name)}">`).join("")}</datalist>
+    <select id="sc">${SHOPCATS.map((c) => `<option ${c === draft.cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    <button class="p" data-a="s-add">Añadir</button></div></div>`;
+  if (!inList.length) h += `<div class="card mu">La lista está vacía. Escribe algo arriba o toca un producto de acceso rápido.</div>`;
+  for (const [c, arr] of byCat(inList)) {
+    h += `<div class="card"><div class="mu cat">${esc(c)}</div>` + arr.sort((a, b) => a.done - b.done || a.name.localeCompare(b.name)).map((x) =>
+      `<div class="srow ${x.done ? "done" : ""}" data-sid="${esc(x.id)}"><button class="chk" data-a="s-toggle" aria-label="Marcar">${x.done ? "✓" : ""}</button>
+      <div class="grow nm" data-a="s-toggle">${esc(x.name)}</div><button class="x" data-a="s-del" aria-label="Quitar de la lista">✕</button></div>`).join("") + `</div>`;
+  }
+  if (doneN) h += `<button class="p" data-a="s-clear" style="width:100%;margin:4px 0">Limpiar lo comprado (${doneN})</button>`;
+  if (known.length) {
+    h += `<div class="card"><div class="row"><div class="grow nm">Acceso rápido</div><button data-a="s-edit">${editQuick ? "Hecho" : "Editar"}</button></div>`;
+    for (const [c, arr] of byCat(known)) {
+      h += `<div class="mu cat">${esc(c)}</div><div class="chips">` + arr.sort((a, b) => (b.uses || 0) - (a.uses || 0) || a.name.localeCompare(b.name)).map((x) =>
+        `<span class="chip" data-sid="${esc(x.id)}"><button data-a="s-quick">${editQuick ? "" : "+ "}${esc(x.name)}</button>${editQuick ? `<button class="x" data-a="s-forget" aria-label="Olvidar">✕</button>` : ""}</span>`).join("") + `</div>`;
+    }
+    h += `</div>`;
+  }
+  return h;
+}
+
 function view() {
   if (!user) return;
   let h = "";
@@ -48,6 +97,8 @@ function view() {
     h += a.length
       ? `<p class="mu" style="margin:8px 4px">Consúmelo primero:</p>` + a.map((i) => itemHtml(i, true)).join("")
       : `<div class="card mu">Nada caduca en los próximos ${SOON} días. 🎉</div>`;
+  } else if (tab === "compra") {
+    h += shopHtml();
   } else if (tab === "ajustes") {
     h += `<div class="card"><div class="nm">Duración por categoría (días)</div><div class="mu">0 = sin caducidad. Se aplica a los productos nuevos.</div></div>`;
     for (const s of ["congelador", "nevera", "despensa"]) {
@@ -65,9 +116,9 @@ function view() {
   }
   const keep = document.activeElement && document.activeElement.id;
   $("#m").innerHTML = h;
-  if (keep && keep !== "nn" && $("#" + keep)) $("#" + keep).focus();
+  if (keep && keep !== "nn" && keep !== "sn" && $("#" + keep)) $("#" + keep).focus();
   const al = urgent().length;
-  $("#nav").innerHTML = [["avisos", "🔔", "Avisos" + (al ? " (" + al + ")" : "")], ...Object.keys(SECS).map((s) => [s, SECS[s][1], SECS[s][0]]), ["ajustes", "⚙️", "Ajustes"]]
+  $("#nav").innerHTML = [["avisos", "🔔", "Avisos" + (al ? " (" + al + ")" : "")], ["compra", "🛒", "Compra" + (shop.filter((x) => x.inList && !x.done).length ? " (" + shop.filter((x) => x.inList && !x.done).length + ")" : "")], ...Object.keys(SECS).map((s) => [s, SECS[s][1], SECS[s][0]]), ["ajustes", "⚙️", "Ajustes"]]
     .map(([k, e, l]) => `<button data-t="${k}" class="${tab === k ? "on" : ""}"><span>${e}</span>${esc(l)}</button>`).join("");
 }
 
@@ -86,7 +137,15 @@ document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-a]");
   if (!b || !user) return;
   const a = b.dataset.a, card = b.closest("[data-id]"), it = card && items.find((x) => x.id === card.dataset.id);
+  const srow = b.closest("[data-sid]"), sh = srow && shop.find((x) => x.id === srow.dataset.sid);
   try {
+    if (a === "s-add") { await shopAdd($("#sn").value, $("#sc").value); draft = { name: "", cat: "Otros", touched: false }; view(); $("#sn")?.focus(); return; }
+    if (a === "s-toggle" && sh) { sh.done = !sh.done; view(); await store.shopUpdate(sh.id, { done: sh.done }); return; }
+    if (a === "s-del" && sh) { await store.shopUpdate(sh.id, { inList: false, done: false }); return; }
+    if (a === "s-quick" && sh) { await store.shopUpdate(sh.id, { inList: true, done: false, uses: (sh.uses || 0) + 1 }); return; }
+    if (a === "s-forget" && sh) { if (confirm("¿Quitar " + sh.name + " del acceso rápido?")) await store.shopRemove(sh.id); return; }
+    if (a === "s-edit") { editQuick = !editQuick; view(); return; }
+    if (a === "s-clear") { await Promise.all(shop.filter((x) => x.inList && x.done).map((x) => store.shopUpdate(x.id, { inList: false, done: false }))); return; }
     if (a === "q" && it) {
       const q = Math.max(0, it.qty + Number(b.dataset.d));
       it.qty = q; view();
@@ -115,7 +174,25 @@ document.addEventListener("change", async (e) => {
     if (b.dataset.a === "dur") { days = { ...days, [b.dataset.k]: Math.max(0, parseInt(b.value) || 0) }; await store.setDays(days); }
   } catch (x) { fail(x); }
 });
-document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "nn") $("[data-a=new]").click(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.id === "nn") $("[data-a=new]").click();
+  if (e.key === "Enter" && e.target.id === "sn") $("[data-a=s-add]").click();
+});
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "sn") return;
+  draft.name = e.target.value;
+  const known = shop.find((x) => norm(x.name) === norm(draft.name));
+  if (!draft.touched) { draft.cat = known ? known.cat : guessCat(draft.name); const sel = $("#sc"); if (sel) sel.value = draft.cat; }
+});
+document.addEventListener("change", (e) => { if (e.target.id === "sc") { draft.cat = e.target.value; draft.touched = true; } });
+
+async function shopAdd(raw, cat) {
+  const name = cap(raw);
+  if (!name) return;
+  const ex = shop.find((x) => norm(x.name) === norm(name));
+  if (ex) { if (!ex.inList) await store.shopUpdate(ex.id, { inList: true, done: false, uses: (ex.uses || 0) + 1 }); else if (ex.done) await store.shopUpdate(ex.id, { done: false }); return; }
+  await store.shopAdd({ name, cat: SHOPCATS.includes(cat) ? cat : guessCat(name), inList: true, done: false, uses: 1 });
+}
 
 $("#loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -143,6 +220,7 @@ let unsub = [];
     $("#st").textContent = store.error || (store.mode === "firebase" ? "Compartido y sincronizado" : "Modo prueba: datos solo en este dispositivo");
     unsub.push(store.onItems((l) => { items = l; view(); }, fail));
     unsub.push(store.onDays((d) => { days = d; view(); }, fail));
+    unsub.push(store.onShop((l) => { shop = l; view(); }, fail));
   });
 })();
 

@@ -20,10 +20,24 @@ input,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid 
 input[type=date]{height:34px;font-size:13px}
 .w{color:var(--wa)}.r{color:var(--rd)}.off{opacity:.5}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:0;border-radius:0;height:58px;background:none;font-size:10px;min-width:0;padding:0}
+nav{overflow-x:auto}
+nav button{flex:1 0 auto;border:0;border-radius:0;height:58px;background:none;font-size:10px;min-width:62px;padding:0 4px}
 nav button.on{color:var(--ac);font-weight:700}
 nav span{display:block;font-size:20px}
 .b{background:var(--wa);color:#fff;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:14px}
 [hidden]{display:none!important}
 
 #nn{flex:1 1 100%}
+
+.cat{margin:4px 0 6px;text-transform:uppercase;letter-spacing:.04em;font-size:11px}
+.srow{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--bd)}
+.srow:first-of-type{border-top:0}
+.srow .nm{font-weight:500;cursor:pointer;padding:8px 0}
+.chk{min-width:32px;width:32px;height:32px;padding:0;border-radius:50%;border:2px solid var(--ac);background:none;color:#fff;font-weight:700}
+.srow.done .chk{background:var(--ac)}
+.srow.done .nm{text-decoration:line-through;color:var(--mu)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--bd);border-radius:999px;background:var(--bg)}
+.chip button{border:0;background:none;height:36px;border-radius:999px;font-size:14px}
+.chip .x{min-width:28px;height:36px}
+#sn{flex:1 1 100%}
